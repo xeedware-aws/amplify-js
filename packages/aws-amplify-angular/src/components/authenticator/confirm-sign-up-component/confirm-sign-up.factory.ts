@@ -41,7 +41,7 @@ export class ConfirmSignUpComponent implements OnInit, OnDestroy {
 	@Input() authState: AuthState;
 	@Input() usernameAttributes: string = 'username';
 	@Input() hide: string[] = [];
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

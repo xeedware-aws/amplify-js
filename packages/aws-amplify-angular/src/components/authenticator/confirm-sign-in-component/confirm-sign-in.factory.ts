@@ -40,7 +40,7 @@ export class ConfirmSignInComponent implements OnInit, OnDestroy {
 	@Input() framework: String;
 	@Input() authState: AuthState;
 	@Input() hide: string[] = [];
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

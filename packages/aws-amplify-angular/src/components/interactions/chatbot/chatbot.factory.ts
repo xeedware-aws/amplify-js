@@ -48,7 +48,7 @@ export class ChatBotComponent implements OnInit, OnDestroy {
 	@Input() textEnabled: boolean;
 	@Output()
 	complete: EventEmitter<string> = new EventEmitter<string>();
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

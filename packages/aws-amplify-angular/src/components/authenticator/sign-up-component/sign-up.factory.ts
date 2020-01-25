@@ -42,7 +42,7 @@ export class SignUpComponent implements OnInit, OnDestroy {
 	@Input() signUpConfig: any;
 	@Input() usernameAttributes: string = 'username';
 	@Input() hide: string[] = [];
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

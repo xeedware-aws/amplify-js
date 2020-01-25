@@ -34,7 +34,7 @@ import { SumerianSceneComponentIonic } from './sumerian-scene.component.ionic';
 export class SumerianSceneComponent implements OnInit, OnDestroy {
 	@Input() framework: string;
 	@Input() sceneName: string;
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

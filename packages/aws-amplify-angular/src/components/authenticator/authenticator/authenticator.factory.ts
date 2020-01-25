@@ -41,7 +41,7 @@ export class AuthenticatorComponent implements OnInit, OnDestroy {
 	@Input() hide: string[] = [];
 	@Input() signUpConfig: any;
 	@Input() usernameAttributes: string = 'username';
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: true })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

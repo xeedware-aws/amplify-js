@@ -41,7 +41,7 @@ export class GreetingComponent implements OnInit, OnDestroy {
 	@Input() framework: string;
 	@Input() authState: AuthState;
 	@Input() usernameAttributes: string = 'username';
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

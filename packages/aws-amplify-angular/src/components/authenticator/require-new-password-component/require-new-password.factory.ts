@@ -40,7 +40,7 @@ export class RequireNewPasswordComponent implements OnInit, OnDestroy {
 	@Input() framework: string;
 	@Input() authState: AuthState;
 	@Input() hide: string[] = [];
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

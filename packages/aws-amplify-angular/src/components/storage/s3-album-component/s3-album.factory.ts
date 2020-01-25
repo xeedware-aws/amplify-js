@@ -42,7 +42,7 @@ export class S3AlbumComponent implements OnInit, OnDestroy {
 	@Input() options: any;
 	@Output()
 	selected: EventEmitter<string> = new EventEmitter<string>();
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}

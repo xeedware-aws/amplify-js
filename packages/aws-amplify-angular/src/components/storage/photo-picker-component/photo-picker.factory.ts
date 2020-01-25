@@ -48,7 +48,7 @@ export class PhotoPickerComponent implements OnInit, OnDestroy {
 	loaded: EventEmitter<string> = new EventEmitter<string>();
 	@Output()
 	uploaded: EventEmitter<Object> = new EventEmitter<Object>();
-	@ViewChild(DynamicComponentDirective)
+	@ViewChild(DynamicComponentDirective, { static: false })
 	componentHost: DynamicComponentDirective;
 
 	constructor(private componentFactoryResolver: ComponentFactoryResolver) {}
