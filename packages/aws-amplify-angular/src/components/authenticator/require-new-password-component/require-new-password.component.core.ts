@@ -13,10 +13,22 @@
  */
 // tslint:enable
 
-import { Component, Input, OnInit, Inject } from '@angular/core';
+import {
+	Component,
+	Input,
+	OnInit,
+	Inject,
+	OnChanges,
+	SimpleChanges,
+} from '@angular/core';
 import { AmplifyService } from '../../../providers/amplify.service';
 import { AuthState } from '../../../providers/auth.state';
 import { auth } from '../../../assets/data-test-attributes';
+import defaultSignUpFieldAssets from '../../../assets/default-sign-up-fields';
+import { SignUpField } from '../sign-up-component/sign-up.component.core';
+import { PhoneFieldOutput } from '../types';
+import { composePhoneNumber } from '../common';
+import { CognitoUser } from 'amazon-cognito-identity-js';
 
 const template = `
 <div class="amplify-container" *ngIf="_show">
@@ -37,6 +49,35 @@ const template = `
       placeholder="{{ this.amplifyService.i18n().get('Password') }}"
       data-test="${auth.requireNewPassword.newPasswordInput}"
     />
+	</div>
+	  <div class="amplify-form-row" *ngFor="let field of requiredFields">
+			<div *ngIf="field.key !== 'phone_number'">
+				<label class="amplify-input-label">
+					{{ this.amplifyService.i18n().get(field.label) }}
+					<span *ngIf="field.required">*</span>
+				</label>
+				<input #{{field.key}}
+					class="amplify-form-input"
+					[ngClass]="{'amplify-input-invalid ': field.invalid}"
+					type={{field.type}}
+					[placeholder]="this.amplifyService.i18n().get(field.label)"
+					[(ngModel)]="requiredAttributes[field.key]"
+					name="field.key"
+					data-test="${auth.signUp.nonPhoneNumberInput}"
+					/>
+					<div *ngIf="field.key === 'password'" class="amplify-form-extra-details">
+						{{passwordPolicy}}
+					</div>
+			</div>
+			<div *ngIf="field.key === 'phone_number'">
+				<amplify-auth-phone-field-core
+					[label]="field.label"
+					[required]="field.required"
+					[placeholder]="field.placeholder"
+					[defaultCountryCode]="country_code"
+					(phoneFieldChanged)="onPhoneFieldChanged($event)"
+				></amplify-auth-phone-field-core>
+			</div>
     </div>
     <div class="amplify-form-actions">
       <div class="amplify-form-cell-left">
@@ -68,11 +109,21 @@ const template = `
 	selector: 'amplify-auth-require-new-password-core',
 	template,
 })
-export class RequireNewPasswordComponentCore implements OnInit {
+export class RequireNewPasswordComponentCore implements OnInit, OnChanges {
 	_authState: AuthState;
 	_show: boolean;
+	_signUpConfig: any;
 	password: string;
 	errorMessage: string;
+	user: CognitoUser | any;
+	requiredAttributeKeys: string[];
+	requiredAttributes: { [key: string]: string } = {};
+	local_phone_number: string;
+	country_code: string = '1';
+	signUpFields: SignUpField[] = defaultSignUpFieldAssets;
+	hiddenFields: any = [];
+	passwordPolicy: string;
+	requiredFields: SignUpField[];
 	protected logger: any;
 
 	constructor(
@@ -94,11 +145,89 @@ export class RequireNewPasswordComponentCore implements OnInit {
 		this._authState = data.authState;
 		this._show = data.authState.state === 'requireNewPassword';
 		this.hide = data.hide ? data.hide : this.hide;
+		if (data.signUpConfig) {
+			this._signUpConfig = data.signUpConfig;
+			if (this._signUpConfig.defaultCountryCode) {
+				this.country_code = this._signUpConfig.defaultCountryCode;
+			}
+			this.signUpFields = this._signUpConfig.signUpFields
+				? this._signUpConfig.signUpFields
+				: defaultSignUpFieldAssets;
+			if (this._signUpConfig.passwordPolicy) {
+				this.passwordPolicy = this._signUpConfig.passwordPolicy;
+			}
+		}
+	}
+
+	@Input()
+	set signUpConfig(signUpConfig: any) {
+		if (signUpConfig) {
+			this._signUpConfig = signUpConfig;
+			if (this._signUpConfig.defaultCountryCode) {
+				this.country_code = this._signUpConfig.defaultCountryCode;
+			}
+			this.signUpFields = this._signUpConfig.signUpFields
+				? this._signUpConfig.signUpFields
+				: defaultSignUpFieldAssets;
+			if (this._signUpConfig.passwordPolicy) {
+				this.passwordPolicy = this._signUpConfig.passwordPolicy;
+			}
+		}
 	}
 
 	ngOnInit() {
 		if (!this.amplifyService.auth()) {
 			throw new Error('Auth module not registered on AmplifyService provider');
+		}
+	}
+
+	ngOnChanges(changes: SimpleChanges) {
+		if (changes['authState']) {
+			const previous: AuthState = changes['authState'].previousValue;
+			const current: AuthState = changes['authState'].currentValue;
+			if (
+				current.state === 'requireNewPassword' &&
+				previous.state !== 'requireNewPassword'
+			) {
+				this.user = this._authState.user;
+				console.log(JSON.stringify(this.user));
+				if (
+					this.user &&
+					this.user.challengeParam &&
+					this.user.challengeParam.requiredAttributes
+				) {
+					this.requiredAttributeKeys = this.user.challengeParam.requiredAttributes;
+					this.requiredFields = this.signUpFields
+						.filter(f => {
+							return this.requiredAttributeKeys.indexOf(f.key) > -1;
+						})
+						.sort((a, b) => {
+							if (a.displayOrder && b.displayOrder) {
+								if (a.displayOrder < b.displayOrder) {
+									return -1;
+								} else if (a.displayOrder > b.displayOrder) {
+									return 1;
+								} else {
+									if (a.key < b.key) {
+										return -1;
+									} else {
+										return 1;
+									}
+								}
+							} else if (!a.displayOrder && b.displayOrder) {
+								return 1;
+							} else if (a.displayOrder && !b.displayOrder) {
+								return -1;
+							} else if (!a.displayOrder && !b.displayOrder) {
+								if (a.key < b.key) {
+									return -1;
+								} else {
+									return 1;
+								}
+							}
+						});
+				}
+			}
 		}
 	}
 
@@ -110,15 +239,57 @@ export class RequireNewPasswordComponentCore implements OnInit {
 		this.password = password;
 	}
 
+	validateRequiredAttributes() {
+		const invalids = [];
+		this.requiredFields.map(f => {
+			if (f.key !== 'phone_number') {
+				if (f.required && !this.requiredAttributes[f.key]) {
+					f.invalid = true;
+					invalids.push(this.amplifyService.i18n().get(f.label));
+				} else {
+					f.invalid = false;
+				}
+			} else {
+				if (f.required && (!this.country_code || !this.local_phone_number)) {
+					f.invalid = true;
+					invalids.push(this.amplifyService.i18n().get(f.label));
+				} else {
+					f.invalid = false;
+				}
+			}
+		});
+		return invalids;
+	}
+
 	onSubmit() {
-		const { user } = this._authState;
-		const { requiredAttributes } = user.challengeParam;
+		// validate  required fields
+		const validationErrors = this.validateRequiredAttributes();
+		if (validationErrors && validationErrors.length > 0) {
+			return this._setError(
+				`The following fields need to be filled out: ${validationErrors.join(
+					', '
+				)}`
+			);
+		}
+
+		this.requiredFields.forEach(f => {
+			if (f.key === 'phone_number') {
+				// format phone number
+				this.requiredAttributes.phone_number = composePhoneNumber(
+					this.country_code,
+					this.local_phone_number
+				);
+			} // Otherwise, use values entered for <input>
+		});
+
 		this.amplifyService
 			.auth()
-			.completeNewPassword(user, this.password, requiredAttributes)
+			.completeNewPassword(this.user, this.password, this.requiredAttributes)
 			.then(() => {
 				this.onAlertClose();
-				this.amplifyService.setAuthState({ state: 'signIn', user });
+				const nextAuthState = { state: 'signIn', user: this.user };
+				this.amplifyService.setAuthState(nextAuthState);
+				this.authState = nextAuthState;
 			})
 			.catch(err => this._setError(err));
 	}
@@ -139,5 +310,10 @@ export class RequireNewPasswordComponentCore implements OnInit {
 		}
 
 		this.errorMessage = err.message || err;
+	}
+
+	onPhoneFieldChanged(event: PhoneFieldOutput) {
+		this.country_code = event.country_code;
+		this.local_phone_number = event.local_phone_number;
 	}
 }

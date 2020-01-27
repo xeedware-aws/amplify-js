@@ -13,7 +13,7 @@
  */
 // tslint:enable
 
-import { Component, Input, ViewEncapsulation, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { AmplifyService, AuthState } from '../../../providers';
 
 const template = `
@@ -62,6 +62,7 @@ const template = `
      <amplify-auth-require-new-password-core
       *ngIf="!shouldHide('RequireNewPassword')"
       [authState]="authState"
+      [signUpConfig]="_signUpConfig"
       [hide]="hide"
     ></amplify-auth-require-new-password-core>
   </div>
@@ -87,7 +88,7 @@ export class AuthenticatorComponentCore implements OnInit {
 		if (!this.amplifyService.auth()) {
 			throw new Error('Auth module not registered on AmplifyService provider');
 		} else {
-			const loadStatus = this.amplifyService
+			this.amplifyService
 				.auth()
 				.currentAuthenticatedUser()
 				.then(user => {
@@ -95,7 +96,7 @@ export class AuthenticatorComponentCore implements OnInit {
 						this.amplifyService.setAuthState({ state: 'signedIn', user });
 					}
 				})
-				.catch(e => {
+				.catch(() => {
 					if (this.authState.state === 'loading') {
 						this.amplifyService.setAuthState({ state: 'signIn', user: null });
 					}
