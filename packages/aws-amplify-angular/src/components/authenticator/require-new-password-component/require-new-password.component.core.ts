@@ -117,7 +117,6 @@ export class RequireNewPasswordComponentCore implements OnInit, OnChanges {
 	errorMessage: string;
 	user: CognitoUser | any;
 	requiredAttributeKeys: string[];
-	requiredAttributes: { [key: string]: string } = {};
 	local_phone_number: string;
 	country_code: string = '1';
 	signUpFields: SignUpField[] = defaultSignUpFieldAssets;
@@ -174,6 +173,8 @@ export class RequireNewPasswordComponentCore implements OnInit, OnChanges {
 			}
 		}
 	}
+
+	@Input() requiredAttributes: { [key: string]: string } = {};
 
 	ngOnInit() {
 		if (!this.amplifyService.auth()) {
@@ -241,23 +242,25 @@ export class RequireNewPasswordComponentCore implements OnInit, OnChanges {
 
 	validateRequiredAttributes() {
 		const invalids = [];
-		this.requiredFields.map(f => {
-			if (f.key !== 'phone_number') {
-				if (f.required && !this.requiredAttributes[f.key]) {
-					f.invalid = true;
-					invalids.push(this.amplifyService.i18n().get(f.label));
+		if (this.requiredFields) {
+			this.requiredFields.map(f => {
+				if (f.key !== 'phone_number') {
+					if (f.required && !this.requiredAttributes[f.key]) {
+						f.invalid = true;
+						invalids.push(this.amplifyService.i18n().get(f.label));
+					} else {
+						f.invalid = false;
+					}
 				} else {
-					f.invalid = false;
+					if (f.required && (!this.country_code || !this.local_phone_number)) {
+						f.invalid = true;
+						invalids.push(this.amplifyService.i18n().get(f.label));
+					} else {
+						f.invalid = false;
+					}
 				}
-			} else {
-				if (f.required && (!this.country_code || !this.local_phone_number)) {
-					f.invalid = true;
-					invalids.push(this.amplifyService.i18n().get(f.label));
-				} else {
-					f.invalid = false;
-				}
-			}
-		});
+			});
+		}
 		return invalids;
 	}
 
@@ -272,15 +275,17 @@ export class RequireNewPasswordComponentCore implements OnInit, OnChanges {
 			);
 		}
 
-		this.requiredFields.forEach(f => {
-			if (f.key === 'phone_number') {
-				// format phone number
-				this.requiredAttributes.phone_number = composePhoneNumber(
-					this.country_code,
-					this.local_phone_number
-				);
-			} // Otherwise, use values entered for <input>
-		});
+		if (this.requiredFields) {
+			this.requiredFields.forEach(f => {
+				if (f.key === 'phone_number') {
+					// format phone number
+					this.requiredAttributes.phone_number = composePhoneNumber(
+						this.country_code,
+						this.local_phone_number
+					);
+				} // Otherwise, use values entered for <input>
+			});
+		}
 
 		this.amplifyService
 			.auth()
