@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { FormsModule } from '@angular/forms';
 import {
 	BrowserDynamicTestingModule,
 	platformBrowserDynamicTesting,
@@ -8,6 +9,9 @@ import { AmplifyService, AmplifyModules } from '../../../providers';
 import { authModule } from '../../../__mocks__/mock_module';
 // tslint:disable:max-line-length
 import { RequireNewPasswordComponentCore } from '../../../components/authenticator/require-new-password-component/require-new-password.component.core';
+import { SignUpComponentCore } from '../../../components/authenticator/sign-up-component';
+import { MockComponent } from 'ng-mocks';
+import { PhoneFieldComponentCore } from '../../../components/authenticator/phone-field-component/phone-field.component.core';
 // tslint:enable
 
 describe('RequireNewPasswordComponentCore: ', () => {
@@ -23,7 +27,10 @@ describe('RequireNewPasswordComponentCore: ', () => {
 		service = new AmplifyService(authModule);
 		component = new RequireNewPasswordComponentCore(service);
 		TestBed.configureTestingModule({
-			declarations: [RequireNewPasswordComponentCore],
+			declarations: [
+				RequireNewPasswordComponentCore,
+				MockComponent(PhoneFieldComponentCore),
+			],
 			providers: [
 				{
 					provide: AmplifyService,
@@ -34,6 +41,7 @@ describe('RequireNewPasswordComponentCore: ', () => {
 					},
 				},
 			],
+			imports: [FormsModule],
 		}).compileComponents();
 		fixture = TestBed.createComponent(RequireNewPasswordComponentCore);
 		fixtureComponent = fixture.componentInstance;
