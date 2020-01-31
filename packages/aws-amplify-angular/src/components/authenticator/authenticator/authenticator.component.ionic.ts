@@ -71,6 +71,7 @@ const template = `
 <amplify-auth-require-new-password-ionic
   *ngIf="!shouldHide('RequireNewPassword')"
   [authState]="authState"
+  [signUpConfig]="_signUpConfig"
   [hide]="hide"
 ></amplify-auth-require-new-password-ionic>
 </div>

@@ -13,9 +13,8 @@
  */
 // tslint:enable
 
-import { Component, Input, Inject } from '@angular/core';
+import { Component, Inject } from '@angular/core';
 import { AmplifyService } from '../../../providers/amplify.service';
-import { AuthState } from '../../../providers/auth.state';
 import { RequireNewPasswordComponentCore } from './require-new-password.component.core';
 import { auth } from '../../../assets/data-test-attributes';
 
@@ -46,7 +45,36 @@ const template = `
           data-test="${auth.requireNewPassword.newPasswordInput}"
         ></ion-input>
       </ion-item>
-
+      <ion-item lines="none" *ngFor="let field of signUpFields">
+        <ion-label class="amplify-input-label"
+        position="stacked"
+        *ngIf="field.key !== 'phone_number'"
+        >
+          {{ this.amplifyService.i18n().get(field.label) }}
+          <span *ngIf="field.required">*</span>
+        </ion-label>
+        <ion-input
+          [ngClass]="{'amplify-input-invalid ': field.invalid}"
+          *ngIf="field.key !== 'phone_number'"
+          #{{field.key}}
+          type="text"
+          class="amplify-form-input"
+          type={{field.type}}
+          [placeholder]="this.amplifyService.i18n().get(field.label)"
+          (keyup)="setProp($event.target)"
+          name={{field.key}}
+          data-test="${auth.signUp.nonPhoneNumberInput}"
+        ></ion-input>
+        <ion-content *ngIf="field.key === 'phone_number'" class="amplify-phone-ion-content">
+          <amplify-auth-phone-field-ionic
+            [label]="field.label"
+            [required]="field.required"
+            [placeholder]="field.placeholder"
+            [defaultCountryCode]="country_code"
+            (phoneFieldChanged)="onPhoneFieldChanged($event)"
+          ></amplify-auth-phone-field-ionic>
+        </ion-content>
+      </ion-item>
     </ion-list>
 
     <div class="amplify-form-actions">
